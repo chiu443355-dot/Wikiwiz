@@ -2,165 +2,94 @@
 
 import { motion } from 'framer-motion';
 import { Navbar } from '@/components/wikiwiz/navbar';
-import { chapters } from '@/data/chapters';
 import { phases } from '@/data/phases';
+import { chapters } from '@/data/chapters';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { notFound, useParams } from 'next/navigation';
-import { LessonRenderer } from '@/components/wikiwiz/lesson-renderer';
-import { ChapterQuiz } from '@/components/wikiwiz/chapter-quiz';
-import { getChapterQuiz } from '@/data/chapter-quizzes';
+import { ArrowRight, Clock, BookOpen } from 'lucide-react';
 
-function ChapterContent({ phaseId, chapterId }: { phaseId: string; chapterId: string }) {
-  const phase = phases.find((p) => p.id === phaseId);
-  const chapter = chapters.find((c) => c.id === chapterId && c.phaseId === phaseId);
-
-  if (!phase || !chapter) {
-    notFound();
-  }
-
-  const phaseChapters = chapters
-    .filter((c) => c.phaseId === phaseId)
-    .sort((a, b) => a.number - b.number);
-
-  const currentIndex = phaseChapters.findIndex((c) => c.id === chapterId);
-  const prevChapter = currentIndex > 0 ? phaseChapters[currentIndex - 1] : null;
-  const nextChapter = currentIndex < phaseChapters.length - 1 ? phaseChapters[currentIndex + 1] : null;
-  const quiz = getChapterQuiz(chapterId);
-
+export default function LearnPage() {
   return (
     <>
       <Navbar />
       <main className="min-h-screen bg-background">
-        {/* Header */}
         <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="px-4 py-12 sm:px-6 lg:px-8 border-b border-border"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="px-4 py-16 sm:px-6 lg:px-8 border-b border-border"
         >
-          <div className="max-w-3xl mx-auto">
-            <Link
-              href={`/learn/${phaseId}`}
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition mb-6"
-            >
-              <ArrowLeft size={16} />
-              Back to {phase.title}
-            </Link>
-
-            <div className="text-sm font-mono text-primary/70 mb-2 tracking-wider uppercase">
-              Phase {phase.number} · Chapter {chapter.number + 1} of {phaseChapters.length}
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground">
-              {chapter.title}
+          <div className="max-w-7xl mx-auto text-center">
+            <h1 className="text-4xl sm:text-5xl font-serif font-bold text-foreground mb-4">
+              Learning Roadmap
             </h1>
+            <p className="text-lg text-muted-foreground">
+              From financial literacy to quantitative mastery — 15 phases
+            </p>
           </div>
         </motion.section>
 
-        {/* Chapter Content */}
-        <section className="px-4 py-12 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto space-y-12">
-            {/* Lesson Content */}
-            <LessonRenderer content={chapter.script} />
-
-            {/* Gita Connection */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="p-6 rounded-xl bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/20"
-            >
-              <div className="text-xs text-primary font-semibold mb-3 uppercase tracking-wider">
-                Gita Wisdom
-              </div>
-              <blockquote className="font-serif text-base text-foreground italic leading-relaxed mb-3">
-                "{chapter.gitaShloka.transliteration}"
-              </blockquote>
-              <p className="text-sm text-muted-foreground mb-3">{chapter.gitaShloka.meaning}</p>
-              <div className="border-t border-primary/10 pt-3">
-                <p className="text-sm text-primary/80 font-medium">Trading Application:</p>
-                <p className="text-sm text-muted-foreground mt-1">{chapter.gitaShloka.tradingApplication}</p>
-              </div>
-            </motion.div>
-
-            {/* Quiz */}
-            {quiz && quiz.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-              >
-                <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
-                  Test Your Knowledge
-                </h2>
-                <div className="p-6 rounded-xl border border-border bg-card">
-                  <ChapterQuiz chapterId={chapterId} questions={quiz} />
-                </div>
-              </motion.div>
-            )}
-
-            {/* Navigation */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-between pt-8 border-t border-border">
-              {prevChapter ? (
-                <Link
-                  href={`/learn/${phaseId}/${prevChapter.id}`}
-                  className="flex items-center gap-3 px-5 py-3 rounded-lg border border-border hover:bg-card transition group"
-                >
-                  <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                  <div>
-                    <div className="text-xs text-muted-foreground">Previous Chapter</div>
-                    <div className="font-medium text-foreground">{prevChapter.title}</div>
-                  </div>
-                </Link>
-              ) : (
-                <Link
-                  href={`/learn/${phaseId}`}
-                  className="flex items-center gap-3 px-5 py-3 rounded-lg border border-border hover:bg-card transition group"
-                >
-                  <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                  <div>
-                    <div className="text-xs text-muted-foreground">Back to Phase</div>
-                    <div className="font-medium text-foreground">{phase.title}</div>
-                  </div>
-                </Link>
-              )}
-
-              {nextChapter ? (
-                <Link
-                  href={`/learn/${phaseId}/${nextChapter.id}`}
-                  className="flex items-center gap-3 px-5 py-3 rounded-lg border border-border hover:bg-card transition group text-right"
-                >
-                  <div>
-                    <div className="text-xs text-muted-foreground">Next Chapter</div>
-                    <div className="font-medium text-foreground">{nextChapter.title}</div>
-                  </div>
-                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                </Link>
-              ) : (
-                <Link
-                  href={`/learn/${phaseId}`}
-                  className="flex items-center gap-3 px-5 py-3 rounded-lg border border-border hover:bg-card transition group text-right"
-                >
-                  <div>
-                    <div className="text-xs text-muted-foreground">Phase Complete!</div>
-                    <div className="font-medium text-foreground">Back to {phase.title}</div>
-                  </div>
-                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                </Link>
-              )}
+        <section className="px-4 py-16 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {phases.map((phase, index) => {
+                const phaseChapters = chapters.filter((c) => c.phaseId === phase.id);
+                const firstChapter = phaseChapters.sort((a, b) => a.number - b.number)[0];
+                return (
+                  <motion.div
+                    key={phase.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.05 }}
+                    whileHover={{ y: -4 }}
+                  >
+                    <Link
+                      href={firstChapter ? `/learn/${phase.id}/${firstChapter.id}` : `/learn/${phase.id}`}
+                      className="group block h-full p-6 rounded-xl border border-border bg-card hover:border-primary/50 transition-all duration-300"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-mono font-bold text-sm group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                          {String(phase.number).padStart(2, '0')}
+                        </div>
+                      </div>
+                      <h3 className="text-lg font-serif font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
+                        {phase.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                        {phase.description}
+                      </p>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+                        <span className="flex items-center gap-1">
+                          <Clock size={12} />
+                          {phase.duration}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <BookOpen size={12} />
+                          {phaseChapters.length} chapter{phaseChapters.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 mb-4">
+                        {phase.topics.slice(0, 2).map((t, j) => (
+                          <span key={j} className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary/80 border border-primary/20">
+                            {t}
+                          </span>
+                        ))}
+                        {phase.topics.length > 2 && (
+                          <span className="px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground">
+                            +{phase.topics.length - 2}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 text-sm text-primary font-medium group-hover:gap-2 transition-all">
+                        Start Learning <ArrowRight size={14} />
+                      </div>
+                    </Link>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </section>
       </main>
     </>
-  );
-}
-
-export default function ChapterPage() {
-  const params = useParams();
-  return (
-    <ChapterContent
-      phaseId={params.phaseId as string}
-      chapterId={params.chapterId as string}
-    />
   );
 }
