@@ -6,6 +6,7 @@ import { phases } from '@/data/phases';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, Star, Zap, Shield, TrendingUp, Award, ChevronDown } from 'lucide-react';
 import { useRef } from 'react';
+import { MarketPulseDashboard } from '@/components/home/market-pulse-dashboard';
 
 const FEATURED_PHASES = phases.slice(0, 3);
 
@@ -235,17 +236,13 @@ export default function HomePage() {
                       (e.currentTarget as HTMLElement).style.boxShadow = 'none';
                     }}
                   >
-                    {/* Phase number badge */}
                     <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 border border-primary/20 text-primary font-mono font-bold text-sm mb-4 group-hover:bg-primary group-hover:text-background transition-colors duration-300">
                       {String(phase.number).padStart(2, '0')}
                     </div>
-
                     <h3 className="text-lg font-serif font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
                       {phase.title}
                     </h3>
                     <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{phase.description}</p>
-
-                    {/* Topics */}
                     <div className="flex flex-wrap gap-1.5 mb-6">
                       {phase.topics.slice(0, 2).map((t, j) => (
                         <span key={j} className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary/80 border border-primary/20">
@@ -253,7 +250,6 @@ export default function HomePage() {
                         </span>
                       ))}
                     </div>
-
                     <div className="flex items-center gap-1 text-sm text-primary font-medium group-hover:gap-2 transition-all">
                       Start <ArrowRight size={14} />
                     </div>
@@ -346,6 +342,9 @@ export default function HomePage() {
             </motion.div>
           </div>
         </section>
+
+        {/* ═══════════ MARKET PULSE DASHBOARD ═══════════ */}
+        <MarketPulseDashboard />
 
         {/* ═══════════ CTA ═══════════ */}
         <section className="px-4 py-24 sm:px-6 lg:px-8 border-t border-border">
