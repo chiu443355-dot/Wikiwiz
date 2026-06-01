@@ -2,15 +2,18 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const response = await fetch('https://fear-and-greed-index.p.rapidapi.com/v1/fgi', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-rapidapi-host': 'fear-and-greed-index.p.rapidapi.com',
-        'x-rapidapi-key': process.env.RAPIDAPI_KEY || 'f4e363859emsh11e0578b3227b30p1f5868jsnff900d4f5cf4',
-      },
-      next: { revalidate: 300 }, // Cache 5 minutes
-    });
+    const response = await fetch(
+      'https://cnn-fear-and-greed-index.p.rapidapi.com/cnn/v1/fear_and_greed/index',
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-rapidapi-host': 'cnn-fear-and-greed-index.p.rapidapi.com',
+          'x-rapidapi-key': 'f4e363859emsh11e0578b3227b30p1f5868jsnff900d4f5cf4',
+        },
+        next: { revalidate: 300 }, // cache 5 minutes
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
@@ -18,27 +21,22 @@ export async function GET() {
 
     const data = await response.json();
 
+    // CNN Fear & Greed API response shape
+    const score = data?.fear_and_greed?.score ?? data?.score ?? 50;
+    const rating = data?.fear_and_greed?.rating ?? data?.rating ?? 'Neutral';
+
     return NextResponse.json({
-      value: data.fgi?.now?.value ?? 50,
-      valueText: data.fgi?.now?.valueText ?? 'Neutral',
-      previousClose: data.fgi?.previousClose?.value ?? 50,
-      oneWeekAgo: data.fgi?.oneWeekAgo?.value ?? 50,
-      oneMonthAgo: data.fgi?.oneMonthAgo?.value ?? 50,
-      oneYearAgo: data.fgi?.oneYearAgo?.value ?? 50,
+      value: Math.round(score),
+      valueText: rating,
       lastUpdated: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Fear & Greed API error:', error);
-    // Return mock data that looks real on failure
+    console.error('Fear & Greed CNN API error:', error);
     return NextResponse.json({
-      value: 67,
-      valueText: 'Greed',
-      previousClose: 62,
-      oneWeekAgo: 58,
-      oneMonthAgo: 71,
-      oneYearAgo: 34,
+      value: 50,
+      valueText: 'Neutral',
       lastUpdated: new Date().toISOString(),
-      error: 'Using cached data',
+      error: 'Using fallback data',
     });
   }
 }
