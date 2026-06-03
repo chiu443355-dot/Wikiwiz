@@ -1,18 +1,25 @@
+'use client';
+
 import { Navbar } from '@/components/wikiwiz/navbar';
+import { MLKDashboard } from '@/components/mlk/mlk-dashboard';
 
 export default function MlkLabPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-background text-foreground max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8 space-y-12">
+      <main className="min-h-screen bg-background text-foreground">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8 space-y-2">
+            <h1 className="text-4xl sm:text-5xl font-serif font-bold text-foreground">
+              MLK Lab — Intelligent Risk Prediction
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              Real-time market analysis with IRP Engine. Gold trading simulation with advanced probability modeling.
+            </p>
+          </div>
 
-        {/* MLK Simulation Workspace */}
-        <div className="w-full border border-border p-6 rounded-2xl bg-card min-h-[400px] flex items-center justify-center">
-          <p className="text-center text-muted-foreground font-mono text-sm">
-            [MLK Simulation Workspace — Coming Soon]
-          </p>
+          <MLKDashboard />
         </div>
-
       </main>
     </>
   );
