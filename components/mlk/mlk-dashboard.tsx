@@ -60,6 +60,8 @@ export function MLKDashboard() {
 
   const runAnalysis = () => {
     setIsLoading(true);
+    setShowAI(false);
+    setAiResponse('');
     
     // Simulate processing delay
     setTimeout(() => {
@@ -91,7 +93,7 @@ export function MLKDashboard() {
 - Direction Score: ${(analysisResult.state.directionScore * 100).toFixed(1)}%
 - Market Condition Index: ${(analysisResult.state.mci * 100).toFixed(1)}%
 - Prediction: ${analysisResult.state.prediction}
-- Gold Price: $${analysisResult.goldPrice} (Change: ${analysisResult.state.priceChange > 0 ? '+' : ''}${analysisResult.priceChange.toFixed(2)}%)
+- Gold Price: $${analysisResult.goldPrice} (Change: ${analysisResult.priceChange > 0 ? '+' : ''}${analysisResult.priceChange.toFixed(2)}%)
 
 What's the trading outlook? Provide brief, actionable insights.`;
 
@@ -106,29 +108,55 @@ What's the trading outlook? Provide brief, actionable insights.`;
         body: JSON.stringify({ message: prompt }),
       });
 
-      if (!response.ok) throw new Error('API error');
+      if (!response.ok) {
+        throw new Error(`API error: ${response.statusText}`);
+      }
 
       const reader = response.body?.getReader();
-      if (!reader) throw new Error('No response body');
+      if (!reader) {
+        throw new Error('No response body');
+      }
 
       const decoder = new TextDecoder();
+      let buffer = '';
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        // Filter out reasoning tags
-        const content = chunk
+        const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
+
+        // Process complete lines
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (line.trim()) {
+            // Filter out reasoning tags and keep content
+            const content = line
+              .replace(/\[REASONING\].*?\[\/REASONING\]/gs, '')
+              .trim();
+            
+            if (content && content !== 'data: [DONE]') {
+              setAiResponse((prev) => prev + content);
+            }
+          }
+        }
+      }
+
+      // Process any remaining buffer
+      if (buffer.trim()) {
+        const content = buffer
           .replace(/\[REASONING\].*?\[\/REASONING\]/gs, '')
           .trim();
-        
         if (content) {
           setAiResponse((prev) => prev + content);
         }
       }
     } catch (error) {
-      setAiResponse('Error connecting to AI service. Please try again.');
       console.error('AI request error:', error);
+      setAiResponse('Error connecting to AI service. Please check your API configuration and try again.');
     } finally {
       setAiLoading(false);
     }
@@ -188,7 +216,7 @@ What's the trading outlook? Provide brief, actionable insights.`;
             <button
               onClick={askAI}
               disabled={aiLoading}
-              className="group inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white hover:scale-105 disabled:opacity-50"
+              className="group inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Brain size={18} className={aiLoading ? 'animate-spin' : ''} />
               {aiLoading ? 'Thinking...' : 'Ask AI'}
@@ -204,8 +232,9 @@ What's the trading outlook? Provide brief, actionable insights.`;
               exit={{ opacity: 0 }}
               className="space-y-8"
             >
-              {/* ════════════ GOLD CHART ════════════ */}
+              {/* ════════════ TRADINGVIEW CHART ════════════ */}
               <motion.div
+                key={`chart-${analysisResult.goldPrice}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -213,20 +242,30 @@ What's the trading outlook? Provide brief, actionable insights.`;
               >
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-xl font-bold text-foreground">Gold Spot / USD</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Real-time market analysis</p>
+                    <h3 className="text-xl font-bold text-foreground">Gold Spot / USD · NANDA</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Reactive real-time market analysis</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-3xl font-bold text-amber-400">
+                    <motion.div 
+                      key={`price-${analysisResult.goldPrice}`}
+                      initial={{ scale: 1.1 }}
+                      animate={{ scale: 1 }}
+                      transition={{ duration: 0.3 }}
+                      className="text-3xl font-bold text-amber-400"
+                    >
                       ${analysisResult.goldPrice.toLocaleString()}
-                    </div>
-                    <div
+                    </motion.div>
+                    <motion.div
+                      key={`change-${analysisResult.priceChange}`}
+                      initial={{ scale: 1.1 }}
+                      animate={{ scale: 1 }}
+                      transition={{ duration: 0.3 }}
                       className={`text-sm font-semibold ${
                         analysisResult.priceChange >= 0 ? 'text-green-400' : 'text-red-400'
                       }`}
                     >
                       {analysisResult.priceChange >= 0 ? '▲' : '▼'} {Math.abs(analysisResult.priceChange).toFixed(2)}%
-                    </div>
+                    </motion.div>
                   </div>
                 </div>
 
@@ -256,25 +295,39 @@ What's the trading outlook? Provide brief, actionable insights.`;
                       stroke="#fbbf24"
                       strokeWidth={2}
                       dot={false}
+                      isAnimationActive={true}
                     />
                     <Line dataKey="sma20" stroke="#60a5fa" strokeWidth={1} strokeDasharray="5 5" dot={false} />
                   </ComposedChart>
                 </ResponsiveContainer>
 
                 <div className="grid grid-cols-2 gap-4 mt-6">
-                  <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+                  <motion.div 
+                    key={`resistance-${analysisResult.resistance}`}
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="p-3 rounded-lg bg-green-500/10 border border-green-500/30"
+                  >
                     <p className="text-xs text-muted-foreground">Resistance</p>
                     <p className="text-lg font-bold text-green-400">${analysisResult.resistance}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+                  </motion.div>
+                  <motion.div 
+                    key={`support-${analysisResult.support}`}
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                    className="p-3 rounded-lg bg-red-500/10 border border-red-500/30"
+                  >
                     <p className="text-xs text-muted-foreground">Support</p>
                     <p className="text-lg font-bold text-red-400">${analysisResult.support}</p>
-                  </div>
+                  </motion.div>
                 </div>
               </motion.div>
 
-              {/* ════════════ IRP ANALYSIS ════════════ */}
+              {/* ════════════ IRP ANALYSIS - REACTIVE ════════════ */}
               <motion.div
+                key={`analysis-${analysisResult.state.prediction}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
@@ -284,22 +337,41 @@ What's the trading outlook? Provide brief, actionable insights.`;
                 <div className="p-6 rounded-2xl border border-border bg-card/50">
                   <h3 className="text-lg font-bold text-foreground mb-4">Market Condition</h3>
 
-                  <div className={`p-4 rounded-xl border mb-4 ${phaseInfo?.color}`}>
+                  <motion.div 
+                    key={`phase-${phaseInfo?.phase}`}
+                    initial={{ scale: 0.95 }}
+                    animate={{ scale: 1 }}
+                    className={`p-4 rounded-xl border mb-4 ${phaseInfo?.color}`}
+                  >
                     <p className="text-xs font-mono uppercase tracking-widest opacity-70 mb-1">Market Phase</p>
-                    <p className="text-2xl font-bold">{phaseInfo?.phase}</p>
+                    <motion.p 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.1 }}
+                      className="text-2xl font-bold"
+                    >
+                      {phaseInfo?.phase}
+                    </motion.p>
                     <p className="text-xs mt-2">{phaseInfo?.description}</p>
-                  </div>
+                  </motion.div>
 
                   <div className="space-y-3">
                     <div>
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm text-muted-foreground">Market Load (ρ)</span>
-                        <span className="font-mono font-bold text-primary">
+                        <motion.span 
+                          key={`rho-${analysisResult.state.rho}`}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="font-mono font-bold text-primary"
+                        >
                           {(analysisResult.state.rho * 100).toFixed(1)}%
-                        </span>
+                        </motion.span>
                       </div>
                       <div className="w-full h-2 bg-background rounded-full overflow-hidden">
                         <motion.div
+                          key={`rho-bar-${analysisResult.state.rho}`}
                           initial={{ width: 0 }}
                           animate={{ width: `${analysisResult.state.rho * 100}%` }}
                           transition={{ duration: 0.8 }}
@@ -317,12 +389,19 @@ What's the trading outlook? Provide brief, actionable insights.`;
                     <div>
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm text-muted-foreground">Priority Decay Φ(ρ)</span>
-                        <span className="font-mono font-bold text-cyan-400">
+                        <motion.span 
+                          key={`priority-${analysisResult.state.priority}`}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="font-mono font-bold text-cyan-400"
+                        >
                           {(analysisResult.state.priority * 100).toFixed(1)}%
-                        </span>
+                        </motion.span>
                       </div>
                       <div className="w-full h-2 bg-background rounded-full overflow-hidden">
                         <motion.div
+                          key={`priority-bar-${analysisResult.state.priority}`}
                           initial={{ width: 0 }}
                           animate={{ width: `${analysisResult.state.priority * 100}%` }}
                           transition={{ duration: 0.8, delay: 0.1 }}
@@ -334,12 +413,19 @@ What's the trading outlook? Provide brief, actionable insights.`;
                     <div>
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm text-muted-foreground">Direction Score</span>
-                        <span className="font-mono font-bold text-amber-400">
+                        <motion.span 
+                          key={`direction-${analysisResult.state.directionScore}`}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="font-mono font-bold text-amber-400"
+                        >
                           {(analysisResult.state.directionScore * 100).toFixed(1)}%
-                        </span>
+                        </motion.span>
                       </div>
                       <div className="w-full h-2 bg-background rounded-full overflow-hidden">
                         <motion.div
+                          key={`direction-bar-${analysisResult.state.directionScore}`}
                           initial={{ width: 0 }}
                           animate={{ width: `${analysisResult.state.directionScore * 100}%` }}
                           transition={{ duration: 0.8, delay: 0.2 }}
@@ -351,12 +437,19 @@ What's the trading outlook? Provide brief, actionable insights.`;
                     <div>
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm text-muted-foreground">Market Condition Index</span>
-                        <span className="font-mono font-bold text-purple-400">
+                        <motion.span 
+                          key={`mci-${analysisResult.state.mci}`}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="font-mono font-bold text-purple-400"
+                        >
                           {(analysisResult.state.mci * 100).toFixed(1)}%
-                        </span>
+                        </motion.span>
                       </div>
                       <div className="w-full h-2 bg-background rounded-full overflow-hidden">
                         <motion.div
+                          key={`mci-bar-${analysisResult.state.mci}`}
                           initial={{ width: 0 }}
                           animate={{ width: `${analysisResult.state.mci * 100}%` }}
                           transition={{ duration: 0.8, delay: 0.3 }}
@@ -367,57 +460,88 @@ What's the trading outlook? Provide brief, actionable insights.`;
                   </div>
                 </div>
 
-                {/* Prediction & Scenarios */}
+                {/* Prediction & Scenarios - REACTIVE */}
                 <div className="p-6 rounded-2xl border border-border bg-card/50">
                   <h3 className="text-lg font-bold text-foreground mb-4">Market Prediction</h3>
 
-                  <div className={`p-4 rounded-xl border mb-4 bg-gradient-to-r ${
-                    analysisResult.state.prediction === 'STRONG_BULL'
-                      ? 'from-green-500/20 to-emerald-500/20 border-green-500/50'
-                      : analysisResult.state.prediction === 'BULL'
-                        ? 'from-green-500/10 to-green-500/10 border-green-500/30'
-                        : analysisResult.state.prediction === 'SIDEWAYS'
-                          ? 'from-yellow-500/20 to-yellow-500/20 border-yellow-500/50'
-                          : analysisResult.state.prediction === 'BEAR'
-                            ? 'from-orange-500/10 to-orange-500/10 border-orange-500/30'
-                            : 'from-red-500/20 to-red-500/20 border-red-500/50'
-                  }`}>
+                  <motion.div 
+                    key={`pred-${analysisResult.state.prediction}`}
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className={`p-4 rounded-xl border mb-4 bg-gradient-to-r ${
+                      analysisResult.state.prediction === 'STRONG_BULL'
+                        ? 'from-green-500/20 to-emerald-500/20 border-green-500/50'
+                        : analysisResult.state.prediction === 'BULL'
+                          ? 'from-green-500/10 to-green-500/10 border-green-500/30'
+                          : analysisResult.state.prediction === 'SIDEWAYS'
+                            ? 'from-yellow-500/20 to-yellow-500/20 border-yellow-500/50'
+                            : analysisResult.state.prediction === 'BEAR'
+                              ? 'from-orange-500/10 to-orange-500/10 border-orange-500/30'
+                              : 'from-red-500/20 to-red-500/20 border-red-500/50'
+                    }`}
+                  >
                     <p className="text-xs font-mono uppercase tracking-widest opacity-70 mb-1">Prediction</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-3xl">{predictionDetails?.emoji}</span>
+                      <motion.span 
+                        key={`emoji-${predictionDetails?.emoji}`}
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="text-3xl"
+                      >
+                        {predictionDetails?.emoji}
+                      </motion.span>
                       <div>
-                        <p className="text-xl font-bold text-foreground">{predictionDetails?.label}</p>
+                        <motion.p 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.1 }}
+                          className="text-xl font-bold text-foreground"
+                        >
+                          {predictionDetails?.label}
+                        </motion.p>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
 
                   <div className="space-y-2">
                     <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-3">
                       Scenario Analysis (3 Outcomes)
                     </p>
-                    {analysisResult.state.scenarios.map((scenario, idx) => (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.4 + idx * 0.1 }}
-                        className="p-3 rounded-lg border border-border/50 bg-background/50"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-semibold text-foreground">{scenario.name}</span>
-                          <span className="text-sm font-bold text-primary">{scenario.probability}%</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-border rounded-full overflow-hidden mb-1">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${scenario.probability}%` }}
-                            transition={{ duration: 0.8, delay: 0.5 + idx * 0.1 }}
-                            className="h-full bg-primary"
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground">{scenario.description}</p>
-                      </motion.div>
-                    ))}
+                    <AnimatePresence mode="wait">
+                      {analysisResult.state.scenarios.map((scenario, idx) => (
+                        <motion.div
+                          key={`scenario-${idx}-${scenario.probability}`}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 20 }}
+                          transition={{ delay: 0.4 + idx * 0.1 }}
+                          className="p-3 rounded-lg border border-border/50 bg-background/50"
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-semibold text-foreground">{scenario.name}</span>
+                            <motion.span 
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: 0.1 }}
+                              className="text-sm font-bold text-primary"
+                            >
+                              {scenario.probability}%
+                            </motion.span>
+                          </div>
+                          <div className="w-full h-1.5 bg-border rounded-full overflow-hidden mb-1">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${scenario.probability}%` }}
+                              transition={{ duration: 0.8, delay: 0.5 + idx * 0.1 }}
+                              className="h-full bg-primary"
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">{scenario.description}</p>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 </div>
               </motion.div>
@@ -437,7 +561,13 @@ What's the trading outlook? Provide brief, actionable insights.`;
                     { label: 'Momentum', value: analysisResult.state.momentum, color: 'text-purple-400' },
                     { label: 'Volatility', value: analysisResult.state.volatility, color: 'text-red-400' },
                   ].map((metric) => (
-                    <div key={metric.label} className="p-4 rounded-lg bg-background/50 border border-border/50">
+                    <motion.div 
+                      key={`${metric.label}-${metric.value}`}
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                      className="p-4 rounded-lg bg-background/50 border border-border/50"
+                    >
                       <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">{metric.label}</p>
                       <motion.div
                         initial={{ scale: 0 }}
@@ -455,7 +585,7 @@ What's the trading outlook? Provide brief, actionable insights.`;
                           className={`h-full ${metric.color.replace('text-', 'bg-')}`}
                         />
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </motion.div>
@@ -482,10 +612,15 @@ What's the trading outlook? Provide brief, actionable insights.`;
                     </div>
                   )}
 
-                  {aiResponse && (
-                    <div className="prose prose-invert max-w-none text-foreground prose-p:text-foreground prose-headings:text-cyan-400 prose-strong:text-cyan-300">
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
-                    </div>
+                  {aiResponse && !aiLoading && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.5 }}
+                      className="text-sm leading-relaxed text-foreground whitespace-pre-wrap"
+                    >
+                      {aiResponse}
+                    </motion.div>
                   )}
                 </motion.div>
               )}
