@@ -101,7 +101,7 @@ export function TradingViewChart({ chartType, goldPrice }: TradingViewChartProps
   return (
     <div className="w-full h-96 bg-gradient-to-b from-background to-background/50 rounded-lg overflow-hidden border border-border/50">
       <ResponsiveContainer width="100%" height="100%">
-        {chartType === 'candlestick' && (
+        {chartType === 'candlestick' ? (
           <ComposedChart {...chartProps}>
             <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.18 0 0)" vertical={false} />
             <XAxis dataKey="time" stroke="oklch(0.5 0 0)" tick={{ fontSize: 11 }} />
@@ -109,9 +109,7 @@ export function TradingViewChart({ chartType, goldPrice }: TradingViewChartProps
             <Tooltip content={tooltipContent} />
             <Bar dataKey="close" shape={<CandleStick />} />
           </ComposedChart>
-        )}
-
-        {chartType === 'line' && (
+        ) : chartType === 'line' ? (
           <LineChart {...chartProps}>
             <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.18 0 0)" />
             <XAxis dataKey="time" stroke="oklch(0.5 0 0)" tick={{ fontSize: 11 }} />
@@ -147,9 +145,7 @@ export function TradingViewChart({ chartType, goldPrice }: TradingViewChartProps
               name="Low"
             />
           </LineChart>
-        )}
-
-        {chartType === 'area' && (
+        ) : chartType === 'area' ? (
           <AreaChart {...chartProps}>
             <defs>
               <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
@@ -172,7 +168,7 @@ export function TradingViewChart({ chartType, goldPrice }: TradingViewChartProps
               name="Close"
             />
           </AreaChart>
-        )}
+        ) : <div />}
       </ResponsiveContainer>
     </div>
   );
