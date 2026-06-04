@@ -18,7 +18,7 @@ function getColor(value: number) {
   return { text: 'text-green-400', bar: 'from-green-600 to-green-400', label: 'Extreme Greed' };
 }
 
-export function FearGreedMeter() {
+export function FearGreedMeter(_props?: { value?: number; size?: string }) {
   const [data, setData] = useState<FearGreedData | null>(null);
   const [loading, setLoading] = useState(true);
 
