@@ -1,73 +1,60 @@
-// app/layout.tsx
-// REPLACE your existing layout.tsx with this file.
-// This fixes:
-//   1. Browser tab logo (was showing v0 logo)
-//   2. Correct title, description, and Open Graph metadata
+import type { Metadata, Viewport } from 'next'
+import { Inter, Crimson_Pro, JetBrains_Mono } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
+import './globals.css'
 
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: '--font-sans' });
+const crimson = Crimson_Pro({ subsets: ["latin"], variable: '--font-serif', weight: ['400', '600', '700'] });
+const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: '--font-mono', weight: ['400', '600', '700'] });
 
 export const metadata: Metadata = {
-  title: "WikiWiz : Financial Geeta — Uncompromising Wisdom for the Modern Trader",
-  description:
-    "Master trading through Bhagavad Gita wisdom. Learn investment philosophy, technical analysis, and risk management with 15 phases of professional financial education.",
-  keywords: ["financial education", "bhagavad gita", "trading", "investment", "NSE", "BSE", "India", "stock market"],
-  authors: [{ name: "WikiWiz" }],
-  creator: "WikiWiz",
-  metadataBase: new URL("https://wikiwiz.vercel.app"),
-  // ── Favicon chain ──────────────────────────────────────────────────────────
-  // Drop wikiwiz-favicon.svg into /public/
-  // Drop wikiwiz-favicon-32.png (32×32) into /public/
-  // Drop wikiwiz-favicon-180.png (180×180 Apple touch icon) into /public/
+  title: 'WikiWiz : Financial Geeta — Uncompromising Wisdom for the Modern Trader',
+  description: 'Master trading through Bhagavad Gita wisdom. Learn investment philosophy, technical analysis, and risk management with professional financial education.',
   icons: {
     icon: [
-      { url: "/wikiwiz-favicon.svg", type: "image/svg+xml" },
-      { url: "/wikiwiz-favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icon-dark-32x32.png', sizes: '32x32', type: 'image/png', media: '(prefers-color-scheme: dark)' },
+      { url: '/icon-light-32x32.png', sizes: '32x32', type: 'image/png', media: '(prefers-color-scheme: light)' },
     ],
-    apple: [
-      { url: "/wikiwiz-favicon-180.png", sizes: "180x180" },
-    ],
-    shortcut: "/wikiwiz-favicon-32.png",
+    apple: '/apple-icon.png',
+    shortcut: '/icon-dark-32x32.png',
   },
-  // ── Open Graph (WhatsApp / Twitter previews) ───────────────────────────────
   openGraph: {
-    title: "WikiWiz : Financial Geeta",
-    description: "15 phases of financial education guided by the Bhagavad Gita.",
-    url: "https://wikiwiz.vercel.app",
-    siteName: "WikiWiz",
-    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
-    locale: "en_IN",
-    type: "website",
+    title: 'WikiWiz : Financial Geeta',
+    description: '15 phases of financial education guided by the Bhagavad Gita.',
+    url: 'https://wikiwiz.vercel.app',
+    siteName: 'WikiWiz',
+    locale: 'en_IN',
+    type: 'website',
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "WikiWiz : Financial Geeta",
-    description: "15 phases of financial education guided by the Bhagavad Gita.",
-    images: ["/og-image.png"],
-  },
-  // ── Theme colour (matches your dark palette) ───────────────────────────────
-  themeColor: "#0a0a0a",
-  manifest: "/manifest.json",
-};
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: 'oklch(0.08 0 0)',
+}
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+}: Readonly<{
+  children: React.ReactNode
+}>) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={`dark ${inter.variable} ${crimson.variable} ${jetbrains.variable}`}
+      suppressHydrationWarning
+    >
       <head>
-        {/*
-          SVG favicon — works in all modern browsers.
-          PNG fallbacks are defined via metadata.icons above.
-          If you need IE11 support add an /favicon.ico as well.
-        */}
+        <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className="bg-background font-sans antialiased text-foreground">
+        {children}
+        {process.env.NODE_ENV === 'production' && <Analytics />}
+      </body>
     </html>
-  );
+  )
 }
