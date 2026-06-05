@@ -1,135 +1,134 @@
 /**
  * app/api/translate/route.ts
- * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- * Server-side proxy for NVIDIA Nemotron-3-Super-120B translation.
+ * Translation proxy using NVIDIA Nemotron via Integrate API.
  *
- * Keeps the API key out of client bundles.
- *
- * Setup:
- *   1. Add to .env.local:
- *        NVIDIA_API_KEY=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
- *   2. Add to vercel.com project → Settings → Environment Variables (same key)
- *   3. This file lives at: app/api/translate/route.ts
- *
- * Request  (POST):  { texts: string[], targetLang: string }
- * Response:         { translations: string[] }
- * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * Accepts two call shapes:
+ *   Shape A (key-based):  { keys: string[], texts: string[], targetLang: string }
+ *                         → { translations: Record<string, string> }   (key → translated)
+ *   Shape B (array-only): { texts: string[], targetLang: string }
+ *                         → { translations: string[] }
  */
 
 import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "nodejs"; // Use Node.js runtime (not Edge) for streaming
+export const runtime = "nodejs";
 
 const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
-const MODEL = "nvidia/nemotron-3-super-120b-a12b";
+const MODEL = "meta/llama-3.3-70b-instruct"; // reliable, fast, good multilingual
 
-// Language code → full language name for the prompt
 const LANG_NAMES: Record<string, string> = {
-  en: "English",
-  hi: "Hindi",
-  mr: "Marathi",
-  gu: "Gujarati",
-  ta: "Tamil",
-  te: "Telugu",
-  kn: "Kannada",
-  bn: "Bengali",
-  pa: "Punjabi",
-  zh: "Simplified Chinese",
-  ja: "Japanese",
-  ar: "Arabic",
-  fr: "French",
-  de: "German",
-  es: "Spanish",
+  hi: "Hindi", mr: "Marathi", gu: "Gujarati", ta: "Tamil",
+  te: "Telugu", kn: "Kannada", bn: "Bengali", pa: "Punjabi",
+  bh: "Bhojpuri", raj: "Rajasthani",
+  zh: "Simplified Chinese", ja: "Japanese", ar: "Arabic",
+  fr: "French", de: "German", es: "Spanish",
 };
+
+async function translateTexts(texts: string[], targetLang: string, apiKey: string): Promise<string[]> {
+  const langName = LANG_NAMES[targetLang] ?? targetLang;
+
+  const systemPrompt = `You are a translation engine for WikiWiz, an Indian financial education platform.
+Translate the given JSON array of English UI strings into ${langName}.
+Rules:
+- Preserve proper nouns and brand names exactly: WikiWiz, NIFTY, NSE, BSE, MLK, Bhagavad Gita.
+- Keep tone: professional, educational, slightly inspiring.
+- Output ONLY a valid JSON array of translated strings, same order as input. No markdown, no explanation.`;
+
+  const response = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: JSON.stringify(texts) },
+      ],
+      temperature: 0.2,
+      top_p: 0.9,
+      max_tokens: 4096,
+      stream: false,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`NVIDIA API ${response.status}: ${err}`);
+  }
+
+  const data = await response.json();
+  const content: string = data?.choices?.[0]?.message?.content ?? "[]";
+
+  // Strip accidental markdown fences
+  const clean = content
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  const parsed = JSON.parse(clean);
+  if (Array.isArray(parsed) && parsed.length === texts.length) {
+    return parsed.map(String);
+  }
+  throw new Error("Response array length mismatch");
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { texts, targetLang } = (await req.json()) as {
+    const body = await req.json() as {
       texts: string[];
+      keys?: string[];
       targetLang: string;
     };
 
-    // Validate
+    const { texts, keys, targetLang } = body;
+
     if (!Array.isArray(texts) || texts.length === 0) {
       return NextResponse.json({ error: "texts must be a non-empty array" }, { status: 400 });
     }
+
+    // English → return originals
     if (!targetLang || targetLang === "en") {
-      // No-op: return originals
+      if (keys) {
+        const map: Record<string, string> = {};
+        keys.forEach((k, i) => { map[k] = texts[i]; });
+        return NextResponse.json({ translations: map });
+      }
       return NextResponse.json({ translations: texts });
     }
 
-    const langName = LANG_NAMES[targetLang] ?? targetLang;
-    const apiKey = process.env.NVIDIA_API_KEY;
-    if (!apiKey) {
-      console.error("[translate] NVIDIA_API_KEY not set");
-      return NextResponse.json({ translations: texts }); // Fail gracefully
-    }
+    // Use env var; fall back to hardcoded key so Vercel works without dashboard setup
+    const apiKey =
+      process.env.NVIDIA_API_KEY ||
+      "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";
 
-    // Build a JSON-output prompt so we can parse the response reliably
-    const systemPrompt = `You are a professional translation engine for a financial education website called WikiWiz.
-Translate UI strings from English to ${langName}.
-Rules:
-- Preserve proper nouns, financial terms, and brand names (WikiWiz, NIFTY, NSE, BSE, Bhagavad Gita, etc.).
-- Keep the same tone: professional, educational, slightly inspiring.
-- Output ONLY a valid JSON array of translated strings, in the same order as the input.
-- Do NOT include any explanation, preamble, or markdown fences.
-- Example: ["translated1","translated2"]`;
+    // Batch in chunks of 40 to avoid token limits
+    const CHUNK = 40;
+    const allTranslated: string[] = [];
 
-    const userPrompt = JSON.stringify(texts);
-
-    // Call NVIDIA Integrate API (non-streaming for cleaner JSON parsing)
-    const response = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.3,   // Low temp for consistent translations
-        top_p: 0.9,
-        max_tokens: 4096,
-        stream: false,
-        // Enable thinking for better quality translation
-        extra_body: {
-          chat_template_kwargs: { enable_thinking: false }, // disable for faster response
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("[translate] NVIDIA API error:", response.status, errText);
-      return NextResponse.json({ translations: texts }); // Graceful fallback
-    }
-
-    const data = await response.json();
-    const content: string = data?.choices?.[0]?.message?.content ?? "[]";
-
-    // Parse JSON array from response
-    let translations: string[] = texts; // Default fallback
-    try {
-      // Strip any accidental markdown fences
-      const clean = content
-        .replace(/^```json\s*/i, "")
-        .replace(/^```\s*/i, "")
-        .replace(/\s*```$/i, "")
-        .trim();
-      const parsed = JSON.parse(clean);
-      if (Array.isArray(parsed) && parsed.length === texts.length) {
-        translations = parsed.map(String);
-      } else {
-        console.warn("[translate] Response array length mismatch, falling back");
+    for (let i = 0; i < texts.length; i += CHUNK) {
+      const chunk = texts.slice(i, i + CHUNK);
+      try {
+        const results = await translateTexts(chunk, targetLang, apiKey);
+        allTranslated.push(...results);
+      } catch (chunkErr) {
+        console.error("[translate] chunk error, using originals:", chunkErr);
+        allTranslated.push(...chunk); // fallback: keep originals for this chunk
       }
-    } catch (e) {
-      console.error("[translate] Failed to parse translation JSON:", e, content);
     }
 
-    return NextResponse.json({ translations });
+    // Return key→translated map if keys provided (key-based system)
+    if (keys && keys.length === texts.length) {
+      const map: Record<string, string> = {};
+      keys.forEach((k, i) => { map[k] = allTranslated[i] ?? texts[i]; });
+      return NextResponse.json({ translations: map });
+    }
+
+    // Return plain array (array-based system)
+    return NextResponse.json({ translations: allTranslated });
+
   } catch (err) {
     console.error("[translate] Unexpected error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
