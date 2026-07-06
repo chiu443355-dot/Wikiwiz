@@ -2,12 +2,15 @@
 
 import { motion } from 'framer-motion';
 import { useMemo } from 'react';
+import { useTranslation } from '@/lib/hooks/use-translation';
 
 interface LessonRendererProps {
   content: string;
 }
 
 export function LessonRenderer({ content }: LessonRendererProps) {
+  const { t } = useTranslation();
+  
   const paragraphs = useMemo(() => {
     return content
       .split('\n\n')
@@ -33,7 +36,7 @@ export function LessonRenderer({ content }: LessonRendererProps) {
               transition={{ delay: idx * 0.05 }}
               className="text-3xl font-serif font-bold text-foreground pt-8"
             >
-              {paragraph.replace('## ', '')}
+              {t(paragraph.replace('## ', ''))}
             </motion.h2>
           );
         }
@@ -49,7 +52,7 @@ export function LessonRenderer({ content }: LessonRendererProps) {
               transition={{ delay: idx * 0.05 }}
               className="text-xl font-serif font-bold text-primary pt-6"
             >
-              {paragraph.replace('### ', '')}
+              {t(paragraph.replace('### ', ''))}
             </motion.h3>
           );
         }
@@ -66,8 +69,8 @@ export function LessonRenderer({ content }: LessonRendererProps) {
               transition={{ delay: idx * 0.05 }}
               className="text-lg text-foreground leading-relaxed"
             >
-              <span className="font-bold text-primary">{label.replace(/\*\*/g, '')}:</span>
-              <span>{rest.join(':')}</span>
+              <span className="font-bold text-primary">{t(label.replace(/\*\*/g, ''))}:</span>
+              <span>{t(rest.join(':'))}</span>
             </motion.p>
           );
         }
@@ -93,7 +96,7 @@ export function LessonRenderer({ content }: LessonRendererProps) {
                   className="flex gap-3 text-muted-foreground"
                 >
                   <span className="text-primary font-bold">•</span>
-                  <span>{item.replace('- ', '')}</span>
+                  <span>{t(item.replace('- ', ''))}</span>
                 </motion.li>
               ))}
             </motion.ul>
@@ -110,7 +113,7 @@ export function LessonRenderer({ content }: LessonRendererProps) {
             transition={{ delay: idx * 0.02 }}
             className="text-lg text-muted-foreground leading-relaxed"
           >
-            {paragraph}
+            {t(paragraph)}
           </motion.p>
         );
       })}
