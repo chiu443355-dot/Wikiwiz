@@ -7,40 +7,42 @@ import Link from 'next/link';
 import { ArrowRight, BookOpen, Star, Zap, Shield, TrendingUp, Award, ChevronDown } from 'lucide-react';
 import { useRef } from 'react';
 import { MarketPulseDashboard } from '@/components/home/market-pulse-dashboard';
+import { useTranslation } from '@/lib/hooks/use-translation';
 
 const FEATURED_PHASES = phases.slice(0, 3);
 
 const STATS = [
-  { value: '15', label: 'Learning Phases', icon: BookOpen },
-  { value: '50+', label: 'Chapters', icon: Star },
-  { value: '40+', label: 'Hours of Content', icon: Zap },
-  { value: '700+', label: 'Years of Gita Wisdom', icon: Shield },
+  { value: '15', label: 'Learning Phases', key: 'home.stat.phases', icon: BookOpen },
+  { value: '50+', label: 'Chapters', key: 'home.stat.chapters', icon: Star },
+  { value: '40+', label: 'Hours of Content', key: 'home.stat.hours', icon: Zap },
+  { value: '700+', label: 'Years of Gita Wisdom', key: 'home.stat.gita', icon: Shield },
 ];
 
 const FEATURES = [
   {
     icon: BookOpen,
-    title: 'Gita-Guided Learning',
-    desc: 'Ancient wisdom meets modern finance. Each lesson is paired with a Bhagavad Gita verse that reframes how you see money.',
+    title: 'features.gita.title',
+    desc: 'features.gita.desc',
   },
   {
     icon: TrendingUp,
-    title: 'From Zero to Mastery',
-    desc: '15 carefully structured phases take you from "What is money?" to advanced portfolio construction and quantitative investing.',
+    title: 'features.mastery.title',
+    desc: 'features.mastery.desc',
   },
   {
     icon: Shield,
-    title: 'Risk-First Philosophy',
-    desc: 'We teach you to protect capital before chasing returns. Understand volatility, hedging, and how to survive bear markets.',
+    title: 'features.risk.title',
+    desc: 'features.risk.desc',
   },
   {
     icon: Award,
-    title: 'Built for Indian Markets',
-    desc: 'All examples use INR, NSE/BSE context, and Indian tax frameworks — relevant to where you actually invest.',
+    title: 'features.indian.title',
+    desc: 'features.indian.desc',
   },
 ];
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
   const heroOpacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
@@ -99,7 +101,7 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/10 text-primary text-sm font-medium"
             >
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              Financial Mastery Through Ancient Wisdom
+              {t('home.badge')}
             </motion.div>
 
             {/* Headline */}
@@ -109,7 +111,7 @@ export default function HomePage() {
               transition={{ duration: 0.7, delay: 0.1 }}
               className="text-5xl sm:text-6xl lg:text-7xl font-serif font-bold text-foreground leading-[1.1] tracking-tight"
             >
-              The{' '}
+              {t('home.hero.line1')}{' '}
               <span
                 className="relative inline-block"
                 style={{
@@ -118,10 +120,10 @@ export default function HomePage() {
                   WebkitTextFillColor: 'transparent',
                 }}
               >
-                Financial Geeta
+                {t('home.hero.line2')}
               </span>
               <br />
-              for the Modern Trader
+              {t('home.hero.line3')}
             </motion.h1>
 
             {/* Sub */}
@@ -131,8 +133,7 @@ export default function HomePage() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
             >
-              15 phases of uncompromising financial education — from first principles to advanced market mastery —
-              guided by the timeless philosophy of the Bhagavad Gita.
+              {t('home.hero.subtitle')}
             </motion.p>
 
             {/* CTAs */}
@@ -144,17 +145,17 @@ export default function HomePage() {
             >
               <Link
                 href="/learn"
-                className="group inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base transition-all duration-200 hover:scale-105 hover:shadow-[0_0_30px_oklch(0.65_0.15_40_/_0.4)]"
+                className="group inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base transition-all duration-200 hover:scale-105 hover:shadow-[0_0_30px_oklch(0.65_0.15_40_[...]:"
                 style={{ background: 'linear-gradient(135deg, oklch(0.65 0.15 40), oklch(0.75 0.20 25))', color: 'oklch(0.08 0 0)' }}
               >
-                Begin Your Journey
+                {t('home.cta1')}
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
                 href="/calculators"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl border border-border hover:border-primary/50 hover:bg-card text-foreground font-semibold text-base transition-all duration-200"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl border border-border hover:border-primary/50 hover:bg-card text-foreground font-semibold text-base transition-all du[...]"
               >
-                Try Calculators
+                {t('home.cta2')}
               </Link>
             </motion.div>
           </motion.div>
@@ -166,7 +167,7 @@ export default function HomePage() {
             transition={{ delay: 1.2 }}
             className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-muted-foreground"
           >
-            <span className="text-xs font-mono uppercase tracking-widest">Explore</span>
+            <span className="text-xs font-mono uppercase tracking-widest">{t('home.explore')}</span>
             <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
               <ChevronDown size={18} />
             </motion.div>
@@ -181,7 +182,7 @@ export default function HomePage() {
           <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
             {STATS.map((s, i) => (
               <motion.div
-                key={s.label}
+                key={s.key}
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -190,7 +191,7 @@ export default function HomePage() {
               >
                 <s.icon size={20} className="mx-auto text-primary/60" />
                 <div className="text-4xl font-serif font-bold text-primary">{s.value}</div>
-                <div className="text-sm text-muted-foreground">{s.label}</div>
+                <div className="text-sm text-muted-foreground">{t(s.key)}</div>
               </motion.div>
             ))}
           </div>
@@ -205,12 +206,12 @@ export default function HomePage() {
               viewport={{ once: true }}
               className="mb-12 text-center"
             >
-              <div className="text-sm font-mono text-primary/70 mb-2 uppercase tracking-widest">Start Here</div>
+              <div className="text-sm font-mono text-primary/70 mb-2 uppercase tracking-widest">{t('home.phases.start')}</div>
               <h2 className="text-3xl sm:text-4xl font-serif font-bold text-foreground">
-                The First Chapters of Your Journey
+                {t('home.phases.title')}
               </h2>
               <p className="text-muted-foreground mt-3 max-w-xl mx-auto">
-                Begin with the foundations. Every master was once a beginner.
+                {t('home.phases.desc')}
               </p>
             </motion.div>
 
@@ -236,7 +237,7 @@ export default function HomePage() {
                       (e.currentTarget as HTMLElement).style.boxShadow = 'none';
                     }}
                   >
-                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 border border-primary/20 text-primary font-mono font-bold text-sm mb-4 group-hover:bg-primary group-hover:text-background transition-colors duration-300">
+                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 border border-primary/20 text-primary font-mono font-bold text-sm mb-4 group-hover[...]
                       {String(phase.number).padStart(2, '0')}
                     </div>
                     <h3 className="text-lg font-serif font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
@@ -251,7 +252,7 @@ export default function HomePage() {
                       ))}
                     </div>
                     <div className="flex items-center gap-1 text-sm text-primary font-medium group-hover:gap-2 transition-all">
-                      Start <ArrowRight size={14} />
+                      {t('home.phases.start')} <ArrowRight size={14} />
                     </div>
                   </Link>
                 </motion.div>
@@ -263,7 +264,7 @@ export default function HomePage() {
                 href="/learn"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-primary/30 text-primary hover:bg-primary/10 transition font-medium"
               >
-                View All 15 Phases
+                {t('home.viewall')}
                 <ArrowRight size={16} />
               </Link>
             </div>
@@ -282,9 +283,9 @@ export default function HomePage() {
               viewport={{ once: true }}
               className="mb-14 text-center"
             >
-              <div className="text-sm font-mono text-primary/70 mb-2 uppercase tracking-widest">Why WikiWiz</div>
+              <div className="text-sm font-mono text-primary/70 mb-2 uppercase tracking-widest">{t('home.why')}</div>
               <h2 className="text-3xl sm:text-4xl font-serif font-bold text-foreground">
-                Finance. Philosophy. Mastery.
+                {t('home.features')}
               </h2>
             </motion.div>
 
@@ -303,8 +304,8 @@ export default function HomePage() {
                       <f.icon size={20} className="text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-serif font-bold text-foreground mb-1 text-lg">{f.title}</h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                      <h3 className="font-serif font-bold text-foreground mb-1 text-lg">{t(f.title)}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{t(f.desc)}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -312,39 +313,6 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
-        {/* ═══════════ GITA QUOTE ═══════════ */}
-        <section className="px-4 py-24 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.97 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="relative p-10 rounded-3xl text-center overflow-hidden"
-              style={{
-                background: 'linear-gradient(135deg, oklch(0.65 0.15 40 / 0.08) 0%, oklch(0.55 0.25 180 / 0.05) 100%)',
-                border: '1px solid oklch(0.65 0.15 40 / 0.2)',
-              }}
-            >
-              <div className="absolute top-0 left-0 right-0 h-px"
-                style={{ background: 'linear-gradient(90deg, transparent, oklch(0.65 0.15 40 / 0.5), transparent)' }}
-              />
-              <div className="text-5xl font-serif text-primary/30 mb-4">"</div>
-              <blockquote className="font-serif text-xl sm:text-2xl text-foreground italic leading-relaxed mb-6">
-                You have a right to perform your prescribed duties, but you are not entitled to the fruits of your actions. Never consider yourself the cause of the results of your activities, and never be attached to not doing your duty.
-              </blockquote>
-              <cite className="text-sm text-muted-foreground font-mono not-italic">
-                Bhagavad Gita — Chapter 2, Verse 47
-              </cite>
-              <p className="text-sm text-primary/70 mt-3 max-w-lg mx-auto">
-                The philosophy of detached action. The foundation of every successful trader.
-              </p>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* ═══════════ MARKET PULSE DASHBOARD ═══════════ */}
-        <MarketPulseDashboard />
 
         {/* ═══════════ CTA ═══════════ */}
         <section className="px-4 py-24 sm:px-6 lg:px-8 border-t border-border">
@@ -356,17 +324,17 @@ export default function HomePage() {
               className="space-y-6"
             >
               <h2 className="text-3xl sm:text-4xl font-serif font-bold text-foreground">
-                Ready to Master Your Finances?
+                {t('home.cta.title')}
               </h2>
               <p className="text-muted-foreground text-lg">
-                Start with Phase 0. No prior knowledge needed. Just the willingness to learn.
+                {t('home.cta.subtitle')}
               </p>
               <Link
                 href="/learn"
                 className="inline-flex items-center gap-2 px-10 py-4 rounded-xl font-bold text-base transition-all duration-200 hover:scale-105 hover:shadow-[0_0_40px_oklch(0.65_0.15_40_/_0.4)]"
                 style={{ background: 'linear-gradient(135deg, oklch(0.65 0.15 40), oklch(0.75 0.20 25))', color: 'oklch(0.08 0 0)' }}
               >
-                Start Learning Free
+                {t('home.ctalink')}
                 <ArrowRight size={18} />
               </Link>
             </motion.div>
@@ -383,11 +351,11 @@ export default function HomePage() {
               </svg>
               <span className="font-serif font-bold text-foreground">WikiWiz</span>
             </div>
-            <span>Financial Geeta — 15 Phases to Mastery</span>
+            <span>{t('home.footer')}</span>
             <nav className="flex gap-6">
-              <Link href="/learn" className="hover:text-primary transition">Learn</Link>
-              <Link href="/calculators" className="hover:text-primary transition">Calculators</Link>
-              <Link href="/mlk-lab" className="hover:text-primary transition">MLK Lab</Link>
+              <Link href="/learn" className="hover:text-primary transition">{t('nav.learn')}</Link>
+              <Link href="/calculators" className="hover:text-primary transition">{t('nav.calculators')}</Link>
+              <Link href="/mlk-lab" className="hover:text-primary transition">{t('nav.mlk')}</Link>
             </nav>
           </div>
         </footer>

@@ -37,6 +37,8 @@ export const viewport: Viewport = {
   themeColor: 'oklch(0.08 0 0)',
 }
 
+import ClientLayout from '@/components/layouts/client-layout';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -52,7 +54,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="bg-background font-sans antialiased text-foreground">
-        {children}
+        <ClientLayout>
+          {children}
+        </ClientLayout>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
