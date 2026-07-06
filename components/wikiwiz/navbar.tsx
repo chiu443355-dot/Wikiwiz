@@ -8,7 +8,7 @@ import { useState } from 'react';
 
 export function Navbar() {
   const { language, setLanguage } = useLanguage();
-  const { t } = useTranslation();
+  const { t, isLoading } = useTranslation();
   const [showLangMenu, setShowLangMenu] = useState(false);
 
   return (
@@ -45,10 +45,11 @@ export function Navbar() {
             <div className="relative">
               <button
                 onClick={() => setShowLangMenu(!showLangMenu)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-card transition text-sm"
+                disabled={isLoading}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-card transition text-sm disabled:opacity-50"
               >
                 <span className="text-primary font-medium">{LANGUAGES[language]}</span>
-                <ChevronDown size={16} />
+                <ChevronDown size={16} className={isLoading ? 'animate-spin' : ''} />
               </button>
 
               {showLangMenu && (
@@ -60,7 +61,8 @@ export function Navbar() {
                         setLanguage(lang as any);
                         setShowLangMenu(false);
                       }}
-                      className={`block w-full text-left px-4 py-2 text-sm hover:bg-background transition ${
+                      disabled={isLoading}
+                      className={`block w-full text-left px-4 py-2 text-sm hover:bg-background transition disabled:opacity-50 ${
                         language === lang ? 'text-primary font-medium' : 'text-foreground/80'
                       }`}
                     >
