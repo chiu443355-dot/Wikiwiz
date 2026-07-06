@@ -64,7 +64,10 @@ export function useTranslation() {
             targetLang: language,
           }),
         })
-          .then(r => r.json())
+          .then(r => {
+            if (!r.ok) throw new Error(`Translation API error: ${r.status}`);
+            return r.json();
+          })
           .then(data => data.translations as Record<string, string>)
           .catch(err => {
             console.error('[useTranslation] batch error:', err);
@@ -84,6 +87,10 @@ export function useTranslation() {
         apiCache.set(language, merged);
         setApiTranslations(new Map(merged));
         fetchedLang.current = language;
+      })
+      .catch(err => {
+        console.error('[useTranslation] Failed to translate:', err);
+        setApiTranslations(new Map());
       })
       .finally(() => setIsLoading(false));
 
